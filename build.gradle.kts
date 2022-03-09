@@ -3,11 +3,13 @@ import java.net.URL
 
 @Suppress("UNCHECKED_CAST")
 task("build") {
+    buildDir.mkdir()
+
     val index = JsonSlurper().parse(URL("https://betacraft.uk/server-archive/server_index.json")) as List<Map<String, *>>
 
     val manifest = JsonSlurper().parse(URL("https://launchermeta.mojang.com/mc/game/version_manifest.json")) as Map<String, *>
 
-    (manifest["versions"] as List<Map<String, Any>>).parallelStream().forEach { version ->
+    (manifest["versions"] as List<MutableMap<String, Any>>).parallelStream().forEach { version ->
         val id = version["id"] as String
         val url = version["url"] as String
 
@@ -26,11 +28,12 @@ task("build") {
                     "size" to jarFormat["size"] as Int,
                     "url" to jarFormat["url"] as String,
                 )
+
+                version["url"] = "https://babric.github.io/manifest-polyfill/$id.json"
+                File(buildDir, "$id.json").writeText(groovy.json.JsonOutput.toJson(versionInfo))
             }
         }
-
-        buildDir.mkdir()
-        val file = File(buildDir, "$id.json")
-        file.writeText(groovy.json.JsonOutput.toJson(versionInfo))
     }
+
+    File(buildDir, "version_manifest.json").writeText(groovy.json.JsonOutput.toJson(manifest))
 }
