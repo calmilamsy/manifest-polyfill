@@ -7,7 +7,7 @@ task("build") {
 
     val index = JsonSlurper().parse(URL("https://betacraft.uk/server-archive/server_index.json")) as List<Map<String, *>>
 
-    val manifest = JsonSlurper().parse(URL("https://launchermeta.mojang.com/mc/game/version_manifest.json")) as Map<String, *>
+    val manifest = JsonSlurper().parse(URL("https://launchermeta.mojang.com/mc/game/version_manifest_v2.json")) as Map<String, *>
 
     (manifest["versions"] as List<MutableMap<String, Any>>).parallelStream().forEach { version ->
         val id = version["id"] as String
@@ -35,5 +35,5 @@ task("build") {
         }
     }
 
-    File(buildDir, "version_manifest.json").writeText(groovy.json.JsonOutput.toJson(manifest))
+    File(buildDir, "version_manifest_v2.json").writeText(groovy.json.JsonOutput.toJson(manifest))
 }
