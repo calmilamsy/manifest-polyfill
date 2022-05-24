@@ -32,6 +32,8 @@ fun main() {
         val versionInfo = gson.fromJson<JsonObject>(httpClient.get(url))
         val downloads = versionInfo["downloads"].asJsonObject
 
+        var changed = false
+
         if (!downloads.has("server")) {
             val serverInfo = index.singleOrNull { it.asJsonObject["names"].asJsonArray.map { it.asString }.contains(id) }?.asJsonObject
 
@@ -45,9 +47,41 @@ fun main() {
                     addProperty("url", jarFormat["url"].asString)
                 })
 
-                version.addProperty("url", "https://babric.github.io/manifest-polyfill/$id.json")
-                File(out, "$id.json").writeText(gson.toJson(versionInfo))
+                changed = true
             }
+        }
+
+        // Replace lwjgl2 with babric fork
+        versionInfo["libraries"]?.asJsonArray?.let { libraries ->
+            libraries.map { it.asJsonObject }.forEach libraries@{ library ->
+                val (groupId, name, version) = library["name"].asString.split(":")
+
+                if (groupId == "org.lwjgl.lwjgl" && version.startsWith("2.")) {
+                    library["rules"]?.asJsonArray?.let { rules ->
+                        rules.map { it.asJsonObject }.forEach { rule ->
+                            val action = rule["action"].asString
+                            val os = rule["os"]?.asJsonObject
+
+                            // Remove macos specific workarounds
+                            if (action == "allow" && os != null && os["name"].asString == "osx") {
+                                libraries.remove(library)
+                                return@libraries
+                            }
+                        }
+                    }
+
+                    library.addProperty("name", "${groupId}:${name}:2.9.4-babric.1")
+                    library.addProperty("url", "https://maven.glass-launcher.net/releases/")
+                    library.remove("downloads")
+                    library.remove("rules")
+                    changed = true
+                }
+            }
+        }
+
+        if (changed) {
+            version.addProperty("url", "https://babric.github.io/manifest-polyfill/$id.json")
+            File(out, "$id.json").writeText(gson.toJson(versionInfo))
         }
     }
 
