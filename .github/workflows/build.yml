@@ -15,15 +15,17 @@ jobs:
           distribution: adopt
           java-version: 17
 
+      - uses: gradle/wrapper-validation-action@v1
+
       - name: Build
         run: |
           chmod +x gradlew
-          ./gradlew build
+          ./gradlew run
 
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./build
+          publish_dir: ./out
           user_name: 'github-actions[bot]'
           user_email: 'github-actions[bot]@users.noreply.github.com'
