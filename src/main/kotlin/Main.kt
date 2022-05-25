@@ -78,7 +78,17 @@ fun main() {
                 }
             }
         }
-
+        
+        // Remove asm-all, it causes classpath issues with asm9.
+        versionInfo["libraries"]?.asJsonArray?.let { libraries ->
+            libraries.map { it.asJsonObject }.forEach libraries@{ library ->
+                val (groupId, name, _) = library["name"].asString.split(":")
+                if (groupId == "org.ow2.asm" && (name == "asm-all" || name == "asm-debug-all")) {
+                    libraries.remove(library)
+                    changed = true
+                }
+            }
+        }
         if (changed) {
             version.addProperty("url", "https://babric.github.io/manifest-polyfill/$id.json")
             File(out, "$id.json").writeText(gson.toJson(versionInfo))
